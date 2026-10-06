@@ -3,6 +3,8 @@ name = "misery-adv-analysis"
 version = "0.1.0"
 description = "Data analysis and visualization of ADV/ADCP field data (Sea Lamprey Barrier Project, Misery site)"
 authors = [{ email = "ehsan010@umn.edu" }]
+license = "CC-BY-NC-SA-4.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.12,<3.14"
 dependencies = [
     "numpy (>=2.0,<3.0)",

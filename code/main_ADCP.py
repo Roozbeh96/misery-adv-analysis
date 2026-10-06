@@ -22,7 +22,8 @@ from misery.plotting_ADCP import plot_ADCP_U
 dataFolder = Path(__file__).resolve().parent.parent / "dataset" / "ADCP Data - June 2026"
 
 X = [-1.75, -6.75, -11.5]
-Z = [0.1, 0.13, 0.24]
+Z = [57.66, 57.63, 57.52]
+DSWL = 57.76  # downstream water level [m]
 
 # Instrument orientation (facing downstream): +1 = left bank, -1 = right bank.
 # On the right bank the instrument is turned 180 deg about the vertical axis, so its X and Y
@@ -30,7 +31,7 @@ Z = [0.1, 0.13, 0.24]
 Orientation = [1, 1, -1]
 
 # Global Y of each cell: Y = Y_instrument + Orientation * cell distance from the instrument
-Y_instrument = [-1.13, -0.34, 9.91]  # TODO: across-channel position of the instrument [m]
+Y_instrument = [-1.13, -0.34, 9.91]  # across-channel position of the instrument [m]
 
 # How to reduce the samples (rows) to one value per cell:
 #   "min_row"      : the single sample (row) with the lowest mean error
@@ -103,7 +104,7 @@ def main():
     print(f"--- ADCP velocities per cell (method: {SAMPLE_METHOD}) ---")
     print(ADCPDataset.to_string(index=False, float_format=lambda x: f"{x:.3f}"))
 
-    fig = plot_ADCP_U(ADCPDataset)
+    fig = plot_ADCP_U(ADCPDataset, water_level=DSWL)
     plt.show()
     return ADCPDataset
 

@@ -22,8 +22,9 @@ Misery/
 │   ├── discharge.py          # velocity–area discharge from verticals
 │   ├── plotting_ADV.py       # 3D velocity field and planform plots (ADV)
 │   └── plotting_ADCP.py      # lateral U profiles and planform map (ADCP)
-├── Figures/, Doc_Figures/    # figures
+├── Doc_Figures/              # figures
 ├── pyproject.toml            # dependencies (Poetry)
+├── LICENSE                   # CC BY-NC-SA 4.0
 └── poetry.lock               # exact versions, for a reproducible environment
 ```
 
@@ -110,21 +111,23 @@ Interactive Window, where `ParentDataset` (ADV) and `ADCPDataset` (ADCP) stay in
 4. **Orient** (`Orientation`): instruments on the left bank (X1, X2, facing downstream) keep their
    axes; the instrument on the right bank (X3) is turned 180°, so U → −U, V → −V and its cells run
    toward decreasing Y.
-5. **Locate** each cell: `Y = Y_instrument + Orientation · distance`, with station X and Z.
-6. **Plot** (`plotting_ADCP.plot_ADCP_U`): lateral profiles of U with ±σ_U bands, and a planform
-   map coloured by U with (U, V) arrows.
+5. **Locate** each cell: `Y = Y_instrument + Orientation · distance`, with station X and the
+   beam elevation Z, both in the global (survey) coordinate system. The downstream water level
+   `DSWL = 57.76 m` gives the depth of each instrument below the surface (0.10, 0.13, 0.24 m).
+6. **Plot** (`plotting_ADCP.plot_ADCP_U(ADCPDataset, water_level=DSWL)`):
+   - lateral profiles of U with ±σ_U bands (legend: position and depth below the surface);
+   - beam elevation view (Y–Z): water surface, each instrument and its beam, cells coloured by U;
+   - planform map coloured by U with (U, V) arrows.
 
 ## Notes and known limitations
 
 - ADCP cells farther than about 7–8 m from the instrument are noisy (weak echo, near the far bank).
 - The ADCP error bands include instrument noise only; the scatter between the three samples is
   larger, so the true uncertainty of U is higher.
-- ADCP Z is the instrument elevation in local coordinates; it is not yet in the global (survey)
-  datum used for the ADV data.
-
-- Discharge: with only three verticals per section, about a third of Q comes from the segments
+- The ADCP beams are at different depths below the surface (0.10–0.24 m), so the U profiles of
+  the three stations are not taken at the same relative depth.
+- Discharge: with only three verticals per section, 33–44% of Q comes from the segments
   between the outer verticals and the water edges, where q is assumed to fall linearly to zero.
-  The right water edge (`Y_rightbank_edge`) is not surveyed yet and is set to the X3 ADCP position.
 
 ## Work in progress
 
@@ -132,4 +135,6 @@ Interactive Window, where `ParentDataset` (ADV) and `ADCPDataset` (ADCP) stay in
 
 ## License
 
-Not yet specified — all rights reserved by the author until a license is added.
+This work is licensed under the
+[Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/) (CC BY-NC-SA 4.0); see [LICENSE](LICENSE).
+You may share and adapt it for non-commercial purposes, with attribution, under the same license.

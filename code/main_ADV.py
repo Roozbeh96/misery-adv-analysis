@@ -27,8 +27,8 @@ Z_b3 = [57.25, 57.23, 57.29]
 Z_s = [0.02, 0.07, 0.17, 0.27, 0.37, 0.47, 0.57]
 DSWL = 57.76
 Y_leftbank_edge = [-1.26, -0.85, +0.22]
-# Right water edge: not surveyed yet; assumed at the X3 ADCP position (right bank) for all stations
-Y_rightbank_edge = [9.91, 9.91, 9.91]
+# Y of the water edge on the right bank at X1, X2, X3 [m]
+Y_rightbank_edge = [11.81, 11.23, 10.85]
 # Water depth at each vertical [m] (rows: X1, X2, X3; columns: Y1, Y2, Y3 of that station)
 W_d = [[0.83, 0.72, 0.64], [0.68, 0.6, 0.49], [0.48, 0.44, 0.52]]
 
