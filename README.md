@@ -1,8 +1,7 @@
 # Misery — ADV & ADCP Field Data Analysis
 
 Python tools to process and visualize velocity measurements from the **Misery** site of the
-Sea Lamprey Barrier Project (field campaign of June 2026). The project started as a port of the
-original MATLAB analysis and is being extended with new analyses and visualizations.
+Sea Lamprey Barrier Project (field campaign of June 2026).
 
 Two instruments are processed:
 
@@ -20,15 +19,15 @@ Misery/
 │   └── main_ADCP.py          # ADCP: load, average samples, orient, plot
 ├── src/misery/               # installable package (reusable functions)
 │   ├── filters.py            # mPST_ADVSpikeFilter — ADV despiking
+│   ├── discharge.py          # velocity–area discharge from verticals
 │   ├── plotting_ADV.py       # 3D velocity field and planform plots (ADV)
 │   └── plotting_ADCP.py      # lateral U profiles and planform map (ADCP)
-├── Figures/, Doc_Figures/    # figures from the original MATLAB analysis
+├── Figures/, Doc_Figures/    # figures
 ├── pyproject.toml            # dependencies (Poetry)
 └── poetry.lock               # exact versions, for a reproducible environment
 ```
 
-The field data (`dataset/`) and the original MATLAB scripts (`code/Matlab/`) are **not** included
-in this repository.
+The field data (`dataset/`) are **not** included in this repository.
 
 ## Installation
 
@@ -79,14 +78,18 @@ Interactive Window, where `ParentDataset` (ADV) and `ADCPDataset` (ADCP) stay in
 
 1. **Read** each Vectrino `.dat` file; velocities are columns 3–5 (u, v, w).
 2. **Despike** each component with `mPST_ADVSpikeFilter` (phase-space thresholding,
-   Parsheh et al. 2010 / Wahl 2003; c1 = 1.8, c2 = 1.483). The Python version reproduces the
-   MATLAB output exactly, including its "sample and hold" indexing.
+   Parsheh et al. 2010 / Wahl 2003; c1 = 1.8, c2 = 1.483).
 3. **Orient**: u and v are sign-flipped (`-u`, `-v`) to match the site coordinate system.
 4. **Locate** each point from its file name and the survey geometry (X stations, Y offsets,
    bed elevations, heights above the bed).
 5. **Plot**:
    - 3D view of all sampling points, mean velocity vectors, bed and water surface;
    - planform of time-averaged velocity at selected heights, with a summary table.
+6. **Discharge** (`compute_discharge`, velocity–area method):
+   - each vertical is depth-averaged, `ū = (1/h) ∫ u dz`, with u = 0 at the bed and the top
+     measured velocity held constant to the surface (trapezoidal rule); `q = ū·h`;
+   - the unit discharges are integrated across the section, `Q = ∫ q dy`, with q = 0 at the
+     water edges `Y_leftbank_edge` and `Y_rightbank_edge`, varying linearly in between.
 
 ### ADCP (`main_ADCP.py`)
 
@@ -119,10 +122,12 @@ Interactive Window, where `ParentDataset` (ADV) and `ADCPDataset` (ADCP) stay in
 - ADCP Z is the instrument elevation in local coordinates; it is not yet in the global (survey)
   datum used for the ADV data.
 
+- Discharge: with only three verticals per section, about a third of Q comes from the segments
+  between the outer verticals and the water edges, where q is assumed to fall linearly to zero.
+  The right water edge (`Y_rightbank_edge`) is not surveyed yet and is set to the X3 ADCP position.
+
 ## Work in progress
 
-- Discharge estimate from the ADV verticals (velocity–area method, with the measured left-bank
-  water edge).
 - Combined ADV + ADCP analysis in global coordinates.
 
 ## License

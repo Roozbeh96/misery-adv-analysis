@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from misery.discharge import depth_averaged_velocity, section_discharge
 from misery.filters import mPST_ADVSpikeFilter
 from misery.plotting_ADV import plot_3d_field, plot_planform
 
@@ -26,6 +27,10 @@ Z_b3 = [57.25, 57.23, 57.29]
 Z_s = [0.02, 0.07, 0.17, 0.27, 0.37, 0.47, 0.57]
 DSWL = 57.76
 Y_leftbank_edge = [-1.26, -0.85, +0.22]
+# Right water edge: not surveyed yet; assumed at the X3 ADCP position (right bank) for all stations
+Y_rightbank_edge = [9.91, 9.91, 9.91]
+# Water depth at each vertical [m] (rows: X1, X2, X3; columns: Y1, Y2, Y3 of that station)
+W_d = [[0.83, 0.72, 0.64], [0.68, 0.6, 0.49], [0.48, 0.44, 0.52]]
 
 # 1. Directory containing the files
 dataFolder = Path(__file__).resolve().parent.parent / "dataset" / "ADV Data - June 2026"
@@ -90,6 +95,39 @@ def load_dataset():
     return ParentDataset
 
 
+def compute_discharge(ParentDataset):
+    """Discharge at each X station from the ADV verticals (velocity-area method).
+
+    For each vertical, the time-averaged u at all its heights is depth-averaged
+    (u = 0 at the bed, top value held constant to the surface); the unit discharges
+    are then integrated across the section between the left and right water edges.
+    """
+    Y_stations = [Y1, Y2, Y3]
+    rows = []
+    for xIdx in range(1, 4):
+        q_verticals = []
+        for yIdx in range(1, 4):
+            prefix = f"x{xIdx}y{yIdx}z"
+            points = [(Z_s[int(name[5:]) - 1], np.nanmean(ds["u"]))
+                      for name, ds in ParentDataset.items() if name.startswith(prefix)]
+            z, u = zip(*points)
+            ubar, q = depth_averaged_velocity(z, u, W_d[xIdx - 1][yIdx - 1])
+            q_verticals.append(q)
+        Q, segments = section_discharge(Y_stations[xIdx - 1], q_verticals,
+                                        Y_leftbank_edge[xIdx - 1], Y_rightbank_edge[xIdx - 1])
+        rows.append({
+            "Station": f"X{xIdx}", "X_m": X[xIdx - 1],
+            "Y_left_m": Y_leftbank_edge[xIdx - 1], "Y_right_m": Y_rightbank_edge[xIdx - 1],
+            "q1": q_verticals[0], "q2": q_verticals[1], "q3": q_verticals[2],
+            "Q_m3s": Q, "Edges_%": 100 * (segments[0] + segments[-1]) / Q,
+        })
+
+    DischargeTable = pd.DataFrame(rows)
+    print("--- Discharge from ADV verticals (q in m^2/s, Q in m^3/s; negative = towards -X) ---")
+    print(DischargeTable.to_string(index=False, float_format=lambda x: f"{x:.3f}"))
+    return DischargeTable
+
+
 def main():
     # parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     # parser.add_argument("--save-dir", type=Path, help="folder to save the figures as PNG")
@@ -99,6 +137,7 @@ def main():
     ParentDataset = load_dataset()
     fig1 = plot_3d_field(ParentDataset, Y1, Y2, Y3)
     fig2, _ = plot_planform(ParentDataset)
+    DischargeTable = compute_discharge(ParentDataset)
 
     # if args.save_dir:
     #     args.save_dir.mkdir(parents=True, exist_ok=True)
