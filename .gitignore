@@ -1,0 +1,16 @@
+# Field data (kept locally / on Google Drive, not in the repository)
+dataset/
+
+# Original MATLAB scripts
+code/Matlab/
+
+# Python environment and caches
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Editor / OS files
+.vscode/
+.DS_Store
+*.asv
