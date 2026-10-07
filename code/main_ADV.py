@@ -1,8 +1,7 @@
-"""Python port of main.m — ADV June 2026 mean velocity field (Misery site).
+"""ADV June 2026 analysis (Misery site): mean velocity field, discharge, shear velocity.
 
 Run from the project folder (Misery/):
-    poetry run python code/main.py                 # show figures
-    poetry run python code/main.py --save-dir out  # also save PNGs
+    poetry run python code/main_ADV.py
 """
 
 import argparse
@@ -15,6 +14,8 @@ import pandas as pd
 
 from misery.discharge import depth_averaged_velocity, section_discharge
 from misery.filters import mPST_ADVSpikeFilter
+from misery.loglaw import KAPPA, fit_log_law
+from misery.turbulence import reynolds_shear_stress
 from misery.plotting_ADV import plot_3d_field, plot_planform
 
 X = [-1.75, -6.75, -11.5]
@@ -25,7 +26,8 @@ Z_b1 = [57.02, 57.02, 57.02]
 Z_b2 = [57.01, 56.89, 57.09]
 Z_b3 = [57.25, 57.23, 57.29]
 Z_s = [0.02, 0.07, 0.17, 0.27, 0.37, 0.47, 0.57]
-DSWL = 57.76
+DSWL = 57.76 # downstream water level [m]
+# Y of the water edge on the left bank at X1, X2, X3 [m]
 Y_leftbank_edge = [-1.26, -0.85, +0.22]
 # Y of the water edge on the right bank at X1, X2, X3 [m]
 Y_rightbank_edge = [11.81, 11.23, 10.85]
@@ -128,6 +130,59 @@ def compute_discharge(ParentDataset):
     return DischargeTable
 
 
+def compute_loglaw_fit(ParentDataset, yIdx=2, exclude=(), stations=(1, 2, 3)):
+    """u_tau and z0 at each X station from the log law of the wall, fitted to the vertical yIdx
+    (default 2, the center of the channel).
+
+    z is the height above the bed (Z_s), not the global elevation. The ADV u is negative
+    (flow towards -X), so -u is fitted. Points listed in exclude (e.g. "x1y2z1") are left out.
+    """
+    rows = []
+    for xIdx in stations:
+        prefix = f"x{xIdx}y{yIdx}z"
+        points = sorted((Z_s[int(name[5:]) - 1], -np.nanmean(ds["u"]))
+                        for name, ds in ParentDataset.items()
+                        if name.startswith(prefix) and name not in exclude)
+        z, U = map(np.array, zip(*points))
+        u_tau, z0, r2 = fit_log_law(z, U)
+        rows.append({
+            "Vertical": f"X{xIdx}Y{yIdx}", "X_m": X[xIdx - 1], "Y_m": [Y1, Y2, Y3][xIdx - 1][yIdx - 1],
+            "h_m": W_d[xIdx - 1][yIdx - 1], "N_points": len(z), "z_range_m": f"{z.min():.2f}-{z.max():.2f}",
+            "u_tau_m/s": u_tau, "z0_m": z0, "ks_m (=30 z0)": 30 * z0, "R2": r2,
+        })
+
+    LogLawTable = pd.DataFrame(rows)
+    print(f"--- Log-law fit U/u_tau = (1/kappa) ln(z/z0), kappa = {KAPPA}, z above the bed ---")
+    print(LogLawTable.to_string(index=False, float_format=lambda x: f"{x:.4f}"))
+    return LogLawTable
+
+
+def compute_reynolds_shear_velocity(ParentDataset, xIdx=1, yIdx=2, exclude=("x1y2z1",)):
+    """u_tau from the Reynolds shear stress at each point of one vertical (default X1Y2).
+
+    In uniform open-channel flow the shear stress falls linearly from the bed to the surface,
+    -<u'w'> = u_tau^2 (1 - z/h), so each point gives u_tau = sqrt(-<u'w'> / (1 - z/h)).
+    The streamwise velocity is -u (flow towards -X); the axes are rotated so that W = 0.
+    """
+    h = W_d[xIdx - 1][yIdx - 1]
+    rows = []
+    for name in sorted(ParentDataset):
+        if not name.startswith(f"x{xIdx}y{yIdx}z") or name in exclude:
+            continue
+        ds = ParentDataset[name]
+        z = Z_s[int(name[5:]) - 1]
+        tau, tilt = reynolds_shear_stress(-ds["u"], ds["w"])
+        rows.append({
+            "Point": name, "z_m": z, "z/h": z / h, "U_m/s": -np.nanmean(ds["u"]), "tilt_deg": tilt,
+            "-u'w'_m2/s2": tau, "u_tau_m/s": np.sqrt(max(tau, 0) / (1 - z / h)),
+        })
+
+    ReynoldsTable = pd.DataFrame(rows)
+    print(f"--- u_tau from the Reynolds shear stress at X{xIdx}Y{yIdx} (h = {h} m) ---")
+    print(ReynoldsTable.to_string(index=False, float_format=lambda x: f"{x:.4g}"))
+    return ReynoldsTable
+
+
 def main():
     # parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     # parser.add_argument("--save-dir", type=Path, help="folder to save the figures as PNG")
@@ -136,8 +191,14 @@ def main():
 
     ParentDataset = load_dataset()
     fig1 = plot_3d_field(ParentDataset, Y1, Y2, Y3)
-    fig2, _ = plot_planform(ParentDataset)
+    fig2, _ = plot_planform(ParentDataset, water_edges=(X, Y_leftbank_edge, Y_rightbank_edge))
     DischargeTable = compute_discharge(ParentDataset)
+    LogLawTable = compute_loglaw_fit(ParentDataset)
+    # Near-bed points with ~zero mean and low std (probe at the bed) or low beam correlation:
+    # LogLawTable = compute_loglaw_fit(ParentDataset, exclude=("x1y2z1", "x2y2z1", "x2y2z2", "x3y2z1"))
+    # Final estimate: X1Y2 only, without the near-bed point (bed in the sampling volume)
+    LogLawX1Y2 = compute_loglaw_fit(ParentDataset, exclude=("x1y2z1",), stations=(1,))
+    ReynoldsTable = compute_reynolds_shear_velocity(ParentDataset)
 
     # if args.save_dir:
     #     args.save_dir.mkdir(parents=True, exist_ok=True)

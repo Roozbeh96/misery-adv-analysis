@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+from misery.plotting_site import draw_water_edges
+
 # LaTeX-like look without requiring a TeX installation (MATLAB 'Interpreter','latex')
 plt.rcParams.update(
     {
@@ -131,9 +133,10 @@ def plot_3d_field(ParentDataset, Y1, Y2, Y3):
     return fig
 
 
-def plot_planform(ParentDataset):
+def plot_planform(ParentDataset, water_edges=None):
     """Planform time-averaged velocity at the target elevations (Figure 2 of main.m).
 
+    water_edges : optional (X, Y_left, Y_right) of the water edges on both banks.
     Also prints and returns the summary table.
     """
     # 1. Target grid matrix [xIdx, yIdx] -> zIdx
@@ -185,6 +188,8 @@ def plot_planform(ParentDataset):
     fig, ax = plt.subplots(num="Time-Averaged Velocity Field at Selected Z", facecolor="w", figsize=(14, 9))
     fig.subplots_adjust(left=0.05, right=0.82)  # leave room on the right for the point labels
     ax.grid(True, alpha=0.3)
+    if water_edges is not None:
+        draw_water_edges(ax, *water_edges)
 
     # Quiver of planar vectors (U_bar, 0); MATLAB scale factor 0.5
     V_zero = np.zeros_like(U_timeAvg)

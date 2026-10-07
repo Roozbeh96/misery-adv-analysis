@@ -24,6 +24,10 @@ dataFolder = Path(__file__).resolve().parent.parent / "dataset" / "ADCP Data - J
 X = [-1.75, -6.75, -11.5]
 Z = [57.66, 57.63, 57.52]
 DSWL = 57.76  # downstream water level [m]
+# Y of the water edge on the left bank at X1, X2, X3 [m]
+Y_leftbank_edge = [-1.26, -0.85, +0.22]
+# Y of the water edge on the right bank at X1, X2, X3 [m]
+Y_rightbank_edge = [11.81, 11.23, 10.85]
 
 # Instrument orientation (facing downstream): +1 = left bank, -1 = right bank.
 # On the right bank the instrument is turned 180 deg about the vertical axis, so its X and Y
@@ -104,7 +108,7 @@ def main():
     print(f"--- ADCP velocities per cell (method: {SAMPLE_METHOD}) ---")
     print(ADCPDataset.to_string(index=False, float_format=lambda x: f"{x:.3f}"))
 
-    fig = plot_ADCP_U(ADCPDataset, water_level=DSWL)
+    fig = plot_ADCP_U(ADCPDataset, water_level=DSWL, water_edges=(X, Y_leftbank_edge, Y_rightbank_edge))
     plt.show()
     return ADCPDataset
 

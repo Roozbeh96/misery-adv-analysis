@@ -20,8 +20,11 @@ Misery/
 ├── src/misery/               # installable package (reusable functions)
 │   ├── filters.py            # mPST_ADVSpikeFilter — ADV despiking
 │   ├── discharge.py          # velocity–area discharge from verticals
+│   ├── loglaw.py             # log-law fit: shear velocity u_tau and roughness z0
+│   ├── turbulence.py         # Reynolds shear stress from ADV time series
 │   ├── plotting_ADV.py       # 3D velocity field and planform plots (ADV)
-│   └── plotting_ADCP.py      # lateral U profiles and planform map (ADCP)
+│   ├── plotting_ADCP.py      # lateral U profiles, beam elevation and planform map (ADCP)
+│   └── plotting_site.py      # site features shared by the plots (river water edges)
 ├── Doc_Figures/              # figures
 ├── pyproject.toml            # dependencies (Poetry)
 ├── LICENSE                   # CC BY-NC-SA 4.0
@@ -85,12 +88,20 @@ Interactive Window, where `ParentDataset` (ADV) and `ADCPDataset` (ADCP) stay in
    bed elevations, heights above the bed).
 5. **Plot**:
    - 3D view of all sampling points, mean velocity vectors, bed and water surface;
-   - planform of time-averaged velocity at selected heights, with a summary table.
+   - planform of time-averaged velocity at selected heights, with a summary table and the
+     surveyed water edges of both banks (`water_edges`).
 6. **Discharge** (`compute_discharge`, velocity–area method):
    - each vertical is depth-averaged, `ū = (1/h) ∫ u dz`, with u = 0 at the bed and the top
      measured velocity held constant to the surface (trapezoidal rule); `q = ū·h`;
    - the unit discharges are integrated across the section, `Q = ∫ q dy`, with q = 0 at the
      water edges `Y_leftbank_edge` and `Y_rightbank_edge`, varying linearly in between.
+7. **Shear velocity and bed roughness** at the center verticals (Y2):
+   - `compute_loglaw_fit` fits the log law of the wall, `U/u_τ = (1/κ) ln(z/z0)` (κ = 0.39,
+     z = height above the bed), by least squares in ln z, and reports u_τ, z0, `k_s ≈ 30 z0`
+     and R². Unreliable points can be left out with `exclude` (e.g. `"x1y2z1"`).
+   - `compute_reynolds_shear_velocity` estimates u_τ independently from the Reynolds shear
+     stress, `−⟨u'w'⟩ = u_τ² (1 − z/h)`, after rotating the (u, w) axes at each point so that
+     the mean vertical velocity is zero (removes the effect of probe tilt).
 
 ### ADCP (`main_ADCP.py`)
 
@@ -117,7 +128,8 @@ Interactive Window, where `ParentDataset` (ADV) and `ADCPDataset` (ADCP) stay in
 6. **Plot** (`plotting_ADCP.plot_ADCP_U(ADCPDataset, water_level=DSWL)`):
    - lateral profiles of U with ±σ_U bands (legend: position and depth below the surface);
    - beam elevation view (Y–Z): water surface, each instrument and its beam, cells coloured by U;
-   - planform map coloured by U with (U, V) arrows.
+   - planform map coloured by U with (U, V) arrows, the instrument positions and the
+     surveyed water edges of both banks (`water_edges`).
 
 ## Notes and known limitations
 
@@ -128,6 +140,12 @@ Interactive Window, where `ParentDataset` (ADV) and `ADCPDataset` (ADCP) stay in
   the three stations are not taken at the same relative depth.
 - Discharge: with only three verticals per section, 33–44% of Q comes from the segments
   between the outer verticals and the water edges, where q is assumed to fall linearly to zero.
+- Log law: several near-bed ADV points are unreliable (bed inside the sampling volume, or beam
+  correlation below 70%) and strongly affect the fit. X1Y2 is the only vertical with enough
+  reliable points (z = 0.07–0.47 m); there the log law gives u_τ ≈ 0.020 m/s and z0 ≈ 0.0045 m,
+  and the Reynolds stress (z ≤ 0.27 m) gives u_τ ≈ 0.014 m/s. Above z ≈ 0.3 m the shear stress
+  increases with height (flow downstream of the barrier is not uniform), so those points are
+  not used.
 
 ## Work in progress
 

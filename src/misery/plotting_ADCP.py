@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import TwoSlopeNorm
 
+from misery.plotting_site import draw_water_edges
+
 # LaTeX-like look without requiring a TeX installation (same style as plotting_ADV)
 plt.rcParams.update(
     {
@@ -50,13 +52,16 @@ def plot_U_profiles(ADCPDataset, ax=None, theta_deg=BEAM_ANGLE_DEG, water_level=
     return ax
 
 
-def plot_U_planform(ADCPDataset, ax=None, arrow_scale=1.0):
+def plot_U_planform(ADCPDataset, ax=None, arrow_scale=1.0, water_edges=None):
     """Planform map (X horizontal, Y vertical): cells coloured by U, arrows show (U, V).
 
     arrow_scale : arrow length [m] drawn for a velocity of 1 m/s.
+    water_edges : optional (X, Y_left, Y_right) of the water edges on both banks.
     """
     if ax is None:
         _, ax = plt.subplots(figsize=(10, 8))
+    if water_edges is not None:
+        draw_water_edges(ax, *water_edges)
 
     X = ADCPDataset["X_m[m]"].to_numpy()
     Y = ADCPDataset["Y_m[m]"].to_numpy()
@@ -73,12 +78,15 @@ def plot_U_planform(ADCPDataset, ax=None, arrow_scale=1.0):
     cb = plt.colorbar(sc, ax=ax)
     cb.set_label(r"$U\ \mathrm{[m/s]}$", fontsize=14)
     for station, d in ADCPDataset.groupby("Station"):
-        ax.text(d["X_m[m]"].iloc[0], d["Y_m[m]"].min() - 0.3, station,
+        X0, Y0 = d["X_m[m]"].iloc[0], instrument_position(d)
+        ax.plot(X0, Y0, marker="D", markersize=11, color=STATION_COLORS.get(station),
+                markeredgecolor="k", zorder=5)
+        ax.text(X0, min(d["Y_m[m]"].min(), Y0) - 0.3, station,
                 ha="center", va="top", fontsize=12, fontweight="bold")
 
     ax.set_xlabel(r"$X\ \mathrm{[m]}$", fontsize=14)
     ax.set_ylabel(r"$Y\ \mathrm{[m]}$", fontsize=14)
-    ax.set_title(r"Planform of $U$ (arrows: $U$, $V$)", fontsize=14, fontweight="bold")
+    ax.set_title(r"Planform of $U$ (arrows: $U$, $V$; diamond = instrument)", fontsize=14, fontweight="bold")
     ax.grid(True, alpha=0.3)
     ax.margins(x=0.15, y=0.05)
     ax.tick_params(labelsize=12)
@@ -131,16 +139,17 @@ def plot_beam_elevation(ADCPDataset, water_level, ax=None):
     return ax
 
 
-def plot_ADCP_U(ADCPDataset, water_level=None):
+def plot_ADCP_U(ADCPDataset, water_level=None, water_edges=None):
     """Lateral U profiles and planform map; with a water level, also the beam elevation view.
 
     water_level : water-surface elevation [m] (e.g. DSWL), in the same datum as Z_m[m].
+    water_edges : optional (X, Y_left, Y_right) water edges drawn on the planform map.
     """
     if water_level is None:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(18, 7), num="ADCP U velocity",
                                        gridspec_kw={"width_ratios": [1.2, 1]})
         plot_U_profiles(ADCPDataset, ax=ax1)
-        plot_U_planform(ADCPDataset, ax=ax2)
+        plot_U_planform(ADCPDataset, ax=ax2, water_edges=water_edges)
         fig.tight_layout()
         return fig
 
@@ -151,6 +160,6 @@ def plot_ADCP_U(ADCPDataset, water_level=None):
     ax2 = fig.add_subplot(gs[:, 1])
     plot_U_profiles(ADCPDataset, ax=ax1, water_level=water_level)
     plot_beam_elevation(ADCPDataset, water_level, ax=ax3)
-    plot_U_planform(ADCPDataset, ax=ax2)
+    plot_U_planform(ADCPDataset, ax=ax2, water_edges=water_edges)
     fig.tight_layout()
     return fig
