@@ -95,7 +95,7 @@ def plot_profiles(final, U_adv, v_inlet):
         ax.plot([-final[f"velocity-{n}"] for n in cfd], [Z_s[int(n[5]) - 1] for n in cfd], "s--",
                 label=f"Fluent ($v_{{inlet}}$ = {v_inlet} m/s)")
         ax.axhline(W_d[k - 1][1], color="b", lw=0.8, label="water surface")
-        ax.set(title=f"X{k}Y2 (center vertical)", xlabel="$-u$ [m/s] (downstream positive)")
+        ax.set(title=f"X{k}Y2 (center vertical)", xlabel="$-u$ [m/s] (downstream positive)", ylim=(0, 0.75))
     axs[0].set_ylabel("$z$ above the bed [m]")
     axs[0].legend(fontsize=9)
     fig.tight_layout()
