@@ -16,7 +16,8 @@ Two instruments are processed:
 Misery/
 ├── code/
 │   ├── main_ADV.py           # ADV: load, despike, time-average, plot
-│   └── main_ADCP.py          # ADCP: load, average samples, orient, plot
+│   ├── main_ADCP.py          # ADCP: load, average samples, orient, plot
+│   └── main_Fluent.py        # Fluent results vs ADV: time series, steady state, profiles
 ├── src/misery/               # installable package (reusable functions)
 │   ├── filters.py            # mPST_ADVSpikeFilter — ADV despiking
 │   ├── discharge.py          # velocity–area discharge from verticals
@@ -131,6 +132,19 @@ Interactive Window, where `ParentDataset` (ADV) and `ADCPDataset` (ADCP) stay in
    - planform map coloured by U with (U, V) arrows, the instrument positions and the
      surveyed water edges of both banks (`water_edges`).
 
+### Fluent comparison (`main_Fluent.py`)
+
+1. **Read** the Fluent report file `velocity-epsilon-discharge.out` of each run (velocity and ε at
+   the ADV points, discharge through the inlet, outlet and cross-sections X1–X3, against flow time).
+   The runs are listed in `RUNS` (inlet velocity → folder in `fluentFolder`).
+2. **Steady state**: values are averaged over the last `AVG_WINDOW` = 10 s, and the change from the
+   10 s before (drift) is reported.
+3. **Compare** the final velocities with the time-averaged ADV velocities at the same points.
+4. **Plot** and save to `Doc_Figures/` (numbers in `FIGURE_NUMBERS`): velocity at the ADV points and
+   discharge against time, and velocity profiles at the center verticals (Y2), Fluent vs ADV.
+
+The Fluent output is not included in this repository.
+
 ## Notes and known limitations
 
 - ADCP cells farther than about 7–8 m from the instrument are noisy (weak echo, near the far bank).
@@ -150,6 +164,7 @@ Interactive Window, where `ParentDataset` (ADV) and `ADCPDataset` (ADCP) stay in
 ## Work in progress
 
 - Combined ADV + ADCP analysis in global coordinates.
+- Fluent runs for inlet velocities 0.05 and 0.1 m/s; a run with the discharge imposed at the inlet.
 
 ## License
 
