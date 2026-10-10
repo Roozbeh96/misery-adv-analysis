@@ -18,7 +18,7 @@ from main_ADV import W_d, Z_s, load_dataset
 
 # Folder with one sub-folder per run (v_inlet_0.02, v_inlet_0.05, v_inlet_0.1)
 fluentFolder = Path(__file__).resolve().parents[2] / "Fluent Simulation" / "Misery"
-RUNS = {0.02: "v_inlet_0.02"}  # inlet velocity [m/s] -> folder (add 0.05 and 0.1 when available)
+RUNS = {0.05: "v_inlet0.05", 0.02: "v_inlet_0.02"}  # inlet velocity [m/s] -> folder (add 0.1 when available)
 REPORT_FILE = "velocity-epsilon-discharge.out"
 
 # ADV points shown in Figure 2 (one height per vertical)
