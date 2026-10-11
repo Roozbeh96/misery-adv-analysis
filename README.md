@@ -164,7 +164,7 @@ The Fluent output is not included in this repository.
 ## Work in progress
 
 - Combined ADV + ADCP analysis in global coordinates.
-- Fluent runs for inlet velocities 0.05 and 0.1 m/s; a run with the discharge imposed at the inlet.
+- Fluent runs with the inlet level matched to the ADV discharge, or with the discharge imposed at the inlet.
 
 ## License
 
