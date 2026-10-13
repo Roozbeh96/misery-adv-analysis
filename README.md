@@ -136,7 +136,8 @@ Interactive Window, where `ParentDataset` (ADV) and `ADCPDataset` (ADCP) stay in
 
 1. **Read** the Fluent report file `velocity-epsilon-discharge.out` of each run (velocity and ε at
    the ADV points, discharge through the inlet, outlet and cross-sections X1–X3, against flow time).
-   The runs are listed in `RUNS` (inlet velocity → folder in `fluentFolder`).
+   The runs are listed in `RUNS` (folder in `fluentFolder` → plot label, figure numbers and the
+   reference discharge drawn in the discharge plot).
 2. **Steady state**: values are averaged over the last `AVG_WINDOW` = 10 s, and the change from the
    10 s before (drift) is reported.
 3. **Compare** the final velocities with the time-averaged ADV velocities at the same points.
@@ -164,7 +165,8 @@ The Fluent output is not included in this repository.
 ## Work in progress
 
 - Combined ADV + ADCP analysis in global coordinates.
-- Fluent runs with the inlet level matched to the ADV discharge, or with the discharge imposed at the inlet.
+- Fluent run with the inlet level matched to the ADV discharge (about 58.83 m), or with the discharge
+  imposed at the inlet.
 
 ## License
 

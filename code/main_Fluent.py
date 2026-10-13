@@ -16,19 +16,26 @@ import pandas as pd
 
 from main_ADV import W_d, Z_s, load_dataset
 
-# Folder with one sub-folder per run (v_inlet_0.02, v_inlet_0.05, v_inlet_0.1)
+# Folder with one sub-folder per run
 fluentFolder = Path(__file__).resolve().parents[2] / "Fluent Simulation" / "Misery"
-RUNS = {0.1: "v_inlet_0.1", 0.05: "v_inlet_0.05", 0.02: "v_inlet_0.02"}  # inlet velocity [m/s] -> folder
+Q_CRITICAL = 3.02     # discharge from the critical depth over the barrier, inlet level 58.98 m [m^3/s]
+
+# Runs: folder -> plot label, figure numbers in the documentation (time series, ADV comparison),
+# and the reference discharge drawn in the discharge plot (value [m^3/s], label)
+RUNS = {
+    "v_inlet_0.1": {"label": "$v_{inlet}$ = 0.1 m/s", "figures": (4, 5), "Q_ref": (Q_CRITICAL, "critical depth")},
+    "v_inlet_0.05": {"label": "$v_{inlet}$ = 0.05 m/s", "figures": (6, 7), "Q_ref": (Q_CRITICAL, "critical depth")},
+    "v_inlet_0.02": {"label": "$v_{inlet}$ = 0.02 m/s", "figures": (8, 9), "Q_ref": (Q_CRITICAL, "critical depth")},
+    "y_c_0.12_58.91": {"label": "inlet level 58.91 m", "figures": (10, 11),
+                       "Q_ref": (1.52, "critical depth, $y_c$ = 0.12 m")},
+}
 REPORT_FILE = "velocity-epsilon-discharge.out"
 
 # ADV points shown in Figure 2 (one height per vertical)
 FIG2_POINTS = ["x1y1z6", "x1y2z6", "x1y3z3", "x2y1z5", "x2y2z5", "x2y3z3", "x3y1z4", "x3y2z3", "x3y3z3"]
 Q_ADV = (0.62, 0.74)  # discharge from the ADV verticals [m^3/s] (min, max)
-Q_CRITICAL = 3.02     # discharge from the critical depth over the barrier [m^3/s]
 AVG_WINDOW = 10.0     # length of the final window used as the "steady" value [s]
 
-# Figure numbers in the documentation: inlet velocity -> (time series, ADV comparison)
-FIGURE_NUMBERS = {0.1: (4, 5), 0.05: (6, 7), 0.02: (8, 9)}
 figFolder = Path(__file__).resolve().parent.parent / "Doc_Figures"
 SAVE_FIGURES = True
 
@@ -66,26 +73,26 @@ def compare_points(final, U_adv, points):
     return pd.DataFrame(rows)
 
 
-def plot_time_series(df, v_inlet):
+def plot_time_series(df, label, Q_ref=(Q_CRITICAL, "critical depth")):
     fig, axs = plt.subplots(1, 2, figsize=(14, 5))
     for p in FIG2_POINTS:
         axs[0].plot(df.index, df[f"velocity-{p}"], label=p)
     axs[0].plot(df.index, df["velocity-inlet"], "k--", label="inlet")
     axs[0].set(xlabel="flow time [s]", ylabel="$u$ [m/s]",
-               title=f"Velocity at the ADV points (Figure 2 heights), $v_{{inlet}}$ = {v_inlet} m/s")
+               title=f"Velocity at the ADV points (Figure 2 heights), {label}")
     axs[0].legend(ncol=2, fontsize=9)
 
     for col in ["inlet-discharge", "x1-discharge", "x2-discharge", "x3-discharge", "outlet-discharge"]:
         axs[1].plot(df.index, df[col].abs(), label=col)
     axs[1].axhspan(*Q_ADV, color="grey", alpha=0.3, label="ADV estimate")
-    axs[1].axhline(Q_CRITICAL, color="k", ls=":", label="critical depth")
+    axs[1].axhline(Q_ref[0], color="k", ls=":", label=Q_ref[1])
     axs[1].set(xlabel="flow time [s]", ylabel="$|Q|$ [m$^3$/s]", title="Discharge")
     axs[1].legend(fontsize=9)
     fig.tight_layout()
     return fig
 
 
-def plot_profiles(final, U_adv, v_inlet):
+def plot_profiles(final, U_adv, label):
     """Fluent and ADV velocity profiles at the center verticals (Y2)."""
     fig, axs = plt.subplots(1, 3, figsize=(13, 4.5), sharex=True)
     for k, ax in enumerate(axs, start=1):
@@ -93,7 +100,7 @@ def plot_profiles(final, U_adv, v_inlet):
         ax.plot(-U_adv[names], [Z_s[int(n[5]) - 1] for n in names], "o-", label="ADV")
         cfd = sorted(n for n in names if f"velocity-{n}" in final.index)
         ax.plot([-final[f"velocity-{n}"] for n in cfd], [Z_s[int(n[5]) - 1] for n in cfd], "s--",
-                label=f"Fluent ($v_{{inlet}}$ = {v_inlet} m/s)")
+                label=f"Fluent ({label})")
         ax.axhline(W_d[k - 1][1], color="b", lw=0.8, label="water surface")
         ax.set(title=f"X{k}Y2 (center vertical)", xlabel="$-u$ [m/s] (downstream positive)", ylim=(0, 0.75))
     axs[0].set_ylabel("$z$ above the bed [m]")
@@ -107,17 +114,17 @@ def main():
     U_adv = adv_mean_velocity(ParentDataset)
 
     results = {}
-    for v_inlet, folder in RUNS.items():
+    for folder, run in RUNS.items():
         df = read_report_out(fluentFolder / folder / REPORT_FILE)
         final, drift = final_values(df)
-        print(f"\n=== Fluent run v_inlet = {v_inlet} m/s: {df.index.max():.1f} s simulated; "
+        print(f"\n=== Fluent run {folder}: {df.index.max():.1f} s simulated; "
               f"values averaged over the last {AVG_WINDOW:.0f} s ===")
 
         Q = pd.DataFrame({"Q_m3/s": final.filter(like="discharge"), "drift_m3/s": drift.filter(like="discharge")})
         print("--- Discharge (negative = towards -X) ---")
         print(Q.to_string(float_format=lambda x: f"{x:.3f}"))
         print(f"inlet velocity report: {final['velocity-inlet']:.3f} m/s "
-              f"(set: {v_inlet} m/s); |Q_inlet| / inlet area 30.52 m^2 = {abs(final['inlet-discharge']) / 30.52:.3f} m/s")
+              f"(set: {abs(df['velocity-inlet'].iloc[0])} m/s); |Q_inlet| / inlet area 30.52 m^2 = {abs(final['inlet-discharge']) / 30.52:.3f} m/s")
 
         points = [c.removeprefix("velocity-") for c in df.columns
                   if c.startswith("velocity-x") and c.removeprefix("velocity-") in U_adv.index]
@@ -129,12 +136,12 @@ def main():
         print(f"Figure 2 points: Fluent/ADV = {fig2['Fluent/ADV'].median():.2f} (median), "
               f"{fig2['Fluent/ADV'].min():.2f}-{fig2['Fluent/ADV'].max():.2f} (range)")
 
-        fig_t = plot_time_series(df, v_inlet)
-        fig_p = plot_profiles(final, U_adv, v_inlet)
+        fig_t = plot_time_series(df, run["label"], run["Q_ref"])
+        fig_p = plot_profiles(final, U_adv, run["label"])
         if SAVE_FIGURES:
-            for fig, n in zip((fig_t, fig_p), FIGURE_NUMBERS[v_inlet]):
+            for fig, n in zip((fig_t, fig_p), run["figures"]):
                 fig.savefig(figFolder / f"Figure_{n}.png", dpi=200, bbox_inches="tight")
-        results[v_inlet] = {"reports": df, "final": final, "comparison": Comparison}
+        results[folder] = {"reports": df, "final": final, "comparison": Comparison}
 
     plt.show()
     return results
