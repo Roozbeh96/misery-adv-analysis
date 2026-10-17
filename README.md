@@ -165,8 +165,8 @@ The Fluent output is not included in this repository.
 ## Work in progress
 
 - Combined ADV + ADCP analysis in global coordinates.
-- Fluent run with the critical depth of the ADV discharge: inlet level 58.86 m (y_c = 0.07 m), inlet
-  velocity 0.02 m/s.
+- Fluent runs with inlet levels between 58.86 and 58.91 m (the measured velocities lie between these two
+  runs); compare the simulated cross-sectional areas at X1–X3 with the ADV survey.
 
 ## License
 

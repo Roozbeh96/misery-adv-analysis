@@ -28,9 +28,8 @@ RUNS = {
     "v_inlet_0.02": {"label": "$v_{inlet}$ = 0.02 m/s", "figures": (8, 9), "Q_ref": (Q_CRITICAL, "critical depth")},
     "y_c_0.12_58.91": {"label": "inlet level 58.91 m", "figures": (10, 11),
                        "Q_ref": (1.52, "critical depth, $y_c$ = 0.12 m")},
-    # Next run (ADV critical depth, inlet velocity 0.02 m/s): uncomment and set the folder name when available
-    # "y_c_0.07_58.86": {"label": "inlet level 58.86 m", "figures": (12, 13),
-    #                    "Q_ref": (0.68, "critical depth, $y_c$ = 0.07 m")},
+    "y_c_0.07_58.86": {"label": "inlet level 58.86 m", "figures": (12, 13),
+                       "Q_ref": (0.68, "critical depth, $y_c$ = 0.07 m")},
 }
 REPORT_FILE = "velocity-epsilon-discharge.out"
 
