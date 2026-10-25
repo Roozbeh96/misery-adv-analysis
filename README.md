@@ -17,7 +17,8 @@ Misery/
 ├── code/
 │   ├── main_ADV.py           # ADV: load, despike, time-average, plot
 │   ├── main_ADCP.py          # ADCP: load, average samples, orient, plot
-│   └── main_Fluent.py        # Fluent results vs ADV: time series, steady state, profiles
+│   ├── main_Fluent.py        # Fluent results vs ADV: time series, steady state, profiles
+│   └── main_Fluent_density.py # Fluent side-density screenshots: aligned contours, free surface
 ├── src/misery/               # installable package (reusable functions)
 │   ├── filters.py            # mPST_ADVSpikeFilter — ADV despiking
 │   ├── discharge.py          # velocity–area discharge from verticals
@@ -141,8 +142,17 @@ Interactive Window, where `ParentDataset` (ADV) and `ADCPDataset` (ADCP) stay in
 2. **Steady state**: values are averaged over the last `AVG_WINDOW` = 10 s, and the change from the
    10 s before (drift) is reported.
 3. **Compare** the final velocities with the time-averaged ADV velocities at the same points.
-4. **Plot** and save to `Doc_Figures/` (numbers in `FIGURE_NUMBERS`): velocity at the ADV points and
-   discharge against time, and velocity profiles at the center verticals (Y2), Fluent vs ADV.
+4. **Plot** and save to `Doc_Figures/` (figure numbers in each `RUNS` entry): velocity at the ADV
+   points and discharge against time, and velocity profiles at the center verticals (Y2), Fluent vs ADV.
+
+### Free surface over the barrier (`main_Fluent_density.py`)
+
+Compares the side-plane mixture-density screenshots exported from Fluent for runs with different
+critical depths (y_c = 0.19, 0.12, 0.07 m). The screenshots have different camera views, so they are
+put on a common scale using the geometry: origin at the barrier crest (58.79 m), relative zoom from
+the crest-to-block distance, and metres per pixel fitted to the prescribed depths over the crest
+(recovered within 1 cm). The free surface is taken where the colour crosses the middle of the density
+map (about 500 kg/m³). Outputs: aligned contours and free-surface profiles (`Figure_14`, `Figure_15`).
 
 The Fluent output is not included in this repository.
 
@@ -167,6 +177,9 @@ The Fluent output is not included in this repository.
 - Combined ADV + ADCP analysis in global coordinates.
 - Fluent runs with inlet levels between 58.86 and 58.91 m (the measured velocities lie between these two
   runs); compare the simulated cross-sectional areas at X1–X3 with the ADV survey.
+- Barrier number B = ū (ε L)^(1/3) / (g H) (Reynolds, 2024) along lines downstream of the barrier
+  that match the flume sampling locations (centerline and jumping pool), starting from y_c = 0.12 m
+  and increasing the inlet level.
 
 ## License
 
